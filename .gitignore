@@ -1,7 +1,6 @@
 venv/
 assets/
 data/**/*
-data/*
 !data/**/.gitkeep
 tests/
 __pycache__/
