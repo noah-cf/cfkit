@@ -1,6 +1,8 @@
 venv/
 assets/
-data/
+data/**/*
+data/*
+!data/**/.gitkeep
 tests/
 __pycache__/
 *.pyc
