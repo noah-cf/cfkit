@@ -1,7 +1,6 @@
 cachetools==5.5.0
 certifi==2024.7.4
-# Editable Git install with no remote (cfkit==0.1)
--e /Users/noah/Developer/cfkit
+-e git+https://github.com/noah-cf/cfkit.git@fa7f5e64a0e4afb49b65559aa8ae2209c165b898#egg=cfkit
 charset-normalizer==3.3.2
 et-xmlfile==1.1.0
 google-auth==2.34.0
