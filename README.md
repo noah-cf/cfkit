@@ -51,7 +51,7 @@
 
 7. **Create a run_report.command shortcut**:
     ```sh
-    echo '#!/bin/zsh\nsource "$(dirname "$0")/venv/bin/activate"\nexport PYTHONPATH=$PYTHONPATH:$(pwd)\npython "$(dirname "$0")/src/main.py"\ndeactivate' > cfkit_menu.command
+    echo '#!/bin/zsh\ncd "$(dirname "$0")"\nsource venv/bin/activate\nexport PYTHONPATH=$PYTHONPATH:$(pwd)/src\npython main.py\ndeactivate' > cfkit_menu.command
     chmod +x cfkit_menu.command
     ```
 
