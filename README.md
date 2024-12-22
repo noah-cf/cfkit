@@ -1,18 +1,18 @@
-# Installing the cfkit
+# Installing cfkit
 
 ## Homebrew and Python Setup
 
 ### All the following lines can be simply copy and pasted if you wish, by copying everything
 ### except the "sh" between the two sets of ```.
 
-1. Open a Terminal window
+1. Open a Terminal window.
 
-2. Install Homebrew (if not already installed)
+2. Install Homebrew (if not already installed):
     ```sh
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     ```
 
-3. Install Python (if not already installed)
+3. Install Python (if not already installed):
     ```sh
     brew install python
     ```
@@ -21,9 +21,9 @@
 
 1. Create the directory you wish to keep this project in.
     E.g., Recommendation:
-    ~(Your User)/Developer/
+    ~/Developer/
 
-2. Clone the repository and enter directory
+2. Clone the repository and enter the directory:
     ```sh
     git clone https://github.com/noah-cf/cfkit.git
     cd cfkit
@@ -39,13 +39,17 @@
     source venv/bin/activate
     ```
 
-5. **Install the required packages**:
+5. **Ensure pip, setuptools, and wheel are up-to-date**:
     ```sh
-    pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install --upgrade pip setuptools wheel
     ```
 
-6. **Create a run_report.command shortcut**:
+6. **Install the project (editable mode)**:
+    ```sh
+    pip install -e .
+    ```
+
+7. **Create a run_report.command shortcut**:
     ```sh
     echo '#!/bin/zsh\nsource "$(dirname "$0")/venv/bin/activate"\nexport PYTHONPATH=$PYTHONPATH:$(pwd)\npython "$(dirname "$0")/src/main.py"\ndeactivate' > cfkit_menu.command
     chmod +x cfkit_menu.command
@@ -53,11 +57,10 @@
 
 ### Running the Reports
 
-1. Setting up input files
-    
+1. Setting up input files.
 
-2. Running reports
-    To run the cfkit, simply double-click the `cfkit_menu.command` file or run the following command in the terminal:
+2. Running reports:
+    To run cfkit, simply double-click the `cfkit_menu.command` file or run the following command in the terminal:
     ```sh
     ./cfkit_menu.command
     ```
