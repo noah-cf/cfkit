@@ -249,21 +249,16 @@ spreadsheet.batch_update({"requests": [format_request]})
 
 set_with_dataframe(worksheet, df)
 
-# Define the dynamic part of the folder name
-folder_name = 'assessment_tracker'  # You can adjust this as per your needs
+folder_name = 'assessment_tracker'
 
-# Get the current date in the format YYYY_MM_DD
 current_date_folder = datetime.now().strftime('%Y_%m_%d')
 
-# Create the output folder with the current date and folder name
 output_directory = os.path.join(os.path.dirname(__file__), f'../../../data/assessment_tracker/{current_date_folder}_{folder_name}_output')
 os.makedirs(output_directory, exist_ok=True)
 
-# Save the DataFrame to an Excel file in the output directory, with the custom name
 excel_output_file = os.path.join(output_directory, f'{current_date_folder}_{folder_name}_output.xlsx')
 df.to_excel(excel_output_file, index=False)
 
-# Copy the input SQL file or other relevant files to the output directory, with the custom name
 shutil.copy(sql_file_path, os.path.join(output_directory, f'{current_date_folder}_{folder_name}_query.sql'))
 
 print(f"Data has been saved to Google Sheets and also exported to Excel at {excel_output_file}")

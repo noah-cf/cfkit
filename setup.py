@@ -47,7 +47,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'cfkit=src.main:main',  # Adjust if necessary to match your project structure
+            'cfkit=src.main:main',
         ],
     },
     python_requires='>=3.8',

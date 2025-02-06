@@ -22,7 +22,14 @@ def split_column_by_delimiter(input_file, output_file):
     df = df.drop(columns=[column_name]).join(split_data.rename(column_name))
 
     if file_extension == '.xlsx':
-        df.to_excel(output_file, index=False)
+        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+            sheet_base_name = "Sheet"
+            max_rows = 1_000_000
+            for i, start in enumerate(range(0, len(df), max_rows)):
+                sheet_name = f"{sheet_base_name}_{i}"
+                df.iloc[start:start + max_rows].to_excel(writer, sheet_name=sheet_name, index=False)
+        print(f"Data has been split into multiple sheets and saved to {output_file}")
+
     elif file_extension == '.csv':
         df.to_csv(output_file, index=False)
     
