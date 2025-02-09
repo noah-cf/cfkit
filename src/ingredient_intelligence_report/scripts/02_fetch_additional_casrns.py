@@ -43,18 +43,25 @@ def process_cas_numbers(input_file, output_file):
     
     df['replaced?'] = False
     df['original_Final CAS'] = df['Final CAS']
+    df['suggested_Final CAS'] = None
 
     all_profiles = fetch_all_profiles()
 
+    user_choice = input("Do you want to replace Final CAS numbers with alternative CAS numbers? (y/n): ").strip().lower()
+    replace_cas = user_choice == 'y'
+
     for index, row in tqdm(df.iterrows(), total=df.shape[0], desc="Processing CAS numbers"):
         new_cas = select_relevant_profile(row['Final CAS'], all_profiles)
+        
         if new_cas:
-            df.at[index, 'Final CAS'] = new_cas
-            df.at[index, 'replaced?'] = True
+            df.at[index, 'suggested_Final CAS'] = new_cas
+            if replace_cas:
+                df.at[index, 'Final CAS'] = new_cas
+                df.at[index, 'replaced?'] = True
 
     cols = (
-        ['replaced?', 'original_Final CAS', 'Final CAS'] +
-        [col for col in df.columns if col not in ['replaced?', 'original_Final CAS', 'Final CAS']]
+        ['replaced?', 'original_Final CAS', 'suggested_Final CAS', 'Final CAS'] +
+        [col for col in df.columns if col not in ['replaced?', 'original_Final CAS', 'suggested_Final CAS', 'Final CAS']]
     )
     df = df[cols]
 

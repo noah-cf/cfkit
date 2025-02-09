@@ -53,3 +53,4 @@ columns_to_remove = [col for col in df_output.columns if col.startswith('cf_') o
 df_output.drop(columns=columns_to_remove, inplace=True)
 
 df_output.to_excel(output_file, index=False)
+
