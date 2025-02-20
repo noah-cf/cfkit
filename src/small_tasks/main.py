@@ -11,6 +11,7 @@ def main():
     print("Please select which script to run:")
     print("1. Merge with Delimiter")
     print("2. Split by Delimiter")
+    print("3. Split Excel into Equal Parts")
 
     choice = input("Enter the number of the script to run: ")
 
@@ -18,6 +19,8 @@ def main():
         run_script("merge_with_delimiter.py")
     elif choice == '2':
         run_script("split_by_delimiter.py")
+    elif choice == '3':
+        run_script("excel_splitter.py")
     else:
         print("Invalid choice. Please try again.")
 

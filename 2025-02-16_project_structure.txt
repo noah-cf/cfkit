@@ -1,0 +1,190 @@
+.
+├── README.md
+├── README_INPUT_OUTPUT.md
+├── assets
+│   ├── assessment_properties_tracker
+│   │   └── assessment_properties_tracker.sql
+│   ├── assessment_tracker
+│   │   └── assessment_tracker.sql
+│   ├── cas_mapping
+│   │   ├── OLD_24-03_pharos_profiles.csv
+│   │   ├── cas_maps.xlsx
+│   │   └── pharos_profiles.csv
+│   ├── config.json
+│   ├── endpoint_report
+│   │   └── fetch_latest_verions_verified.sql
+│   ├── h_statement_report
+│   │   ├── download_versions.sql
+│   │   └── harmonized_statements.sql
+│   ├── ingredient_intelligence_report
+│   │   ├── 02_fetch_additional_casrns.sql
+│   │   └── 03_fetch_data_cf.sql
+│   ├── pharos.xlsx
+│   ├── profile-reporting-drive-bc1b54ee37f8.json
+│   ├── toxservices_chas.sql
+│   └── user_report
+│       └── user_report.sql
+├── data
+│   ├── assessment_properties_tracker
+│   ├── assessment_tracker
+│   │   ├── 2024_09_26_assessment_tracker_output
+│   │   ├── 2024_10_13_assessment_tracker_output
+│   │   ├── 2024_10_20_assessment_tracker_output
+│   │   ├── 2024_11_07_assessment_tracker_output
+│   │   ├── 2024_11_12_assessment_tracker_output
+│   │   ├── 2024_11_25_assessment_tracker_output
+│   │   ├── 2024_12_09_assessment_tracker_output
+│   │   └── 2025_01_08_assessment_tracker_output
+│   ├── cas_mapping
+│   │   ├── 2025_02_01_output_0
+│   │   ├── 2025_02_01_output_1
+│   │   ├── 2025_02_01_output_2
+│   │   ├── 2025_02_01_output_3
+│   │   ├── 2025_02_01_output_4
+│   │   ├── 2025_02_01_output_5
+│   │   ├── 2025_02_01_output_6
+│   │   ├── 2025_02_01_output_7
+│   │   ├── 2025_02_01_output_8
+│   │   ├── 2025_02_01_output_9
+│   │   ├── input_0.xlsx
+│   │   ├── input_1.xlsx
+│   │   ├── input_2.xlsx
+│   │   ├── input_3.xlsx
+│   │   ├── input_4.xlsx
+│   │   ├── input_5.xlsx
+│   │   ├── input_6.xlsx
+│   │   ├── input_7.xlsx
+│   │   ├── input_8.xlsx
+│   │   ├── input_9.xlsx
+│   │   ├── orignal_unsplit_input.xlsx
+│   │   └── reeeeeee
+│   ├── endpoint_reports
+│   │   ├── 2024-11-18
+│   │   ├── 2025-01-22
+│   │   └── 2025-01-23
+│   ├── h_statement_reports
+│   │   ├── assessor_assigned_statements
+│   │   ├── download_versions
+│   │   └── harmonized_statements
+│   ├── ingredient_intelligence_reports
+│   │   ├── 01_cas_cleaning_input.xlsx
+│   │   ├── 01_cas_cleaning_output.xlsx
+│   │   ├── 02_fetch_additional_casrns_input.xlsx
+│   │   ├── 02_fetch_additional_casrns_output.xlsx
+│   │   ├── 03_fetch_data_cf_input.xlsx
+│   │   ├── 03_fetch_data_cf_output.xlsx
+│   │   ├── 04_fetch_data_pharos_input.xlsx
+│   │   ├── 04_fetch_data_pharos_output.xlsx
+│   │   ├── 05_gathered_data_merge_input.xlsx
+│   │   ├── 05_gathered_data_merge_output.xlsx
+│   │   ├── 06_gathered_data_report_input.xlsx
+│   │   ├── 06_gathered_data_report_output.xlsx
+│   │   ├── 07_report_breakdown_input.xlsx
+│   │   ├── 07_report_breakdown_output.xlsx
+│   │   ├── 08_report_formatting_input.xlsx
+│   │   └── 08_report_formatting_output.xlsx
+│   ├── small_tasks
+│   │   ├── merge_with_delimiter
+│   │   └── split_by_delimiter
+│   ├── user_reports
+│   │   ├── 2024_09_22_user_report_output
+│   │   ├── 2024_10_06_user_report_output
+│   │   ├── 2024_10_20_user_report_output
+│   │   ├── 2024_11_25_user_report_output
+│   │   ├── 2025_01_09_user_report_output
+│   │   ├── 2025_01_14_user_report_output
+│   │   ├── 2025_01_20_user_report_output
+│   │   └── 2025_02_15_user_report_output
+│   └── visualizations
+│       └── function_bubbles
+├── main.py
+├── project_structure.txt
+├── requirements.txt
+├── setup.py
+├── src
+│   ├── assessment_properties_tracker
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── assessment_tracker
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── cas_mapping
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── cfkit.egg-info
+│   │   ├── PKG-INFO
+│   │   ├── SOURCES.txt
+│   │   ├── dependency_links.txt
+│   │   ├── entry_points.txt
+│   │   ├── requires.txt
+│   │   └── top_level.txt
+│   ├── endpoint_report
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── h_statement_report
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── ingredient_intelligence_report
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── small_tasks
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── user_report
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── scripts
+│   ├── utilities
+│   │   ├── __pycache__
+│   │   ├── cas_handling.py
+│   │   ├── connections.py
+│   │   ├── constants.py
+│   │   ├── data_fetching.py
+│   │   └── data_manipulation.py
+│   └── visualization
+│       ├── __init__.py
+│       ├── main.py
+│       └── scripts
+├── tests
+│   ├── cas_replacement_option
+│   │   ├── cas_replacement_no.xlsx
+│   │   └── cas_replacement_yes.xlsx
+│   └── donut_generation_test_input.xlsx
+└── venv
+    ├── bin
+    │   ├── Activate.ps1
+    │   ├── activate
+    │   ├── activate.csh
+    │   ├── activate.fish
+    │   ├── cfkit
+    │   ├── f2py
+    │   ├── google-oauthlib-tool
+    │   ├── normalizer
+    │   ├── numpy-config
+    │   ├── pip
+    │   ├── pip3
+    │   ├── pip3.12
+    │   ├── pyrsa-decrypt
+    │   ├── pyrsa-encrypt
+    │   ├── pyrsa-keygen
+    │   ├── pyrsa-priv2pub
+    │   ├── pyrsa-sign
+    │   ├── pyrsa-verify
+    │   ├── python -> python3.12
+    │   ├── python3 -> python3.12
+    │   ├── python3.12 -> /opt/homebrew/opt/python@3.12/bin/python3.12
+    │   └── tqdm
+    ├── etc
+    │   └── jupyter
+    ├── include
+    │   └── python3.12
+    ├── lib
+    │   └── python3.12
+    ├── pyvenv.cfg
+    └── share
+        └── jupyter
+
+89 directories, 99 files
