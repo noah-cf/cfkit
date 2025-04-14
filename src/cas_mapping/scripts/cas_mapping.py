@@ -47,14 +47,90 @@ def extract_additional_casrns(json_str):
     except:
         return []
 
-def find_top3_matches(value, col):
-    def calculate_distance(x):
-        x_str = str(x) if x is not None else ""
-        value_str = str(value) if value is not None else ""
-        return levenshtein_distance(value_str, x_str)
-    distances = col.apply(calculate_distance)
-    sorted_indexes = distances.argsort()[:3]
-    return distances[sorted_indexes], sorted_indexes
+def find_best_match(value, profiles_db, cas_mapping):
+    """
+    Find the best match for an ingredient across all sources.
+    Returns a dictionary with the match information.
+    """
+    value_str = str(value) if value is not None else ""
+    best_match = {
+        'distance_lev': float('inf'),
+        'priority_score': -1,
+        'map_source': None,
+        'map_type': None,
+        'matched_on': None,
+        'map_casrn': None,
+        'map_name': None,
+        'map_inci': None,
+        'map_status': None,
+        'map_hazard': None,
+        'map_c2c': None,
+        'map_scil': None,
+        'map_tco': None,
+        'map_additional_casrn': None,
+        'map_list_hazard': None,
+        'map_list_c2c': None
+    }
+    
+    sources = [
+        ("profiles_name", profiles_db["name_lower"], profiles_db, "profiles", "name"),
+        ("profiles_inci", profiles_db["inci_lower"], profiles_db, "profiles", "inci"),
+        ("cas_mapping", cas_mapping["name_lower"], cas_mapping, "mapping", "name")
+    ]
+    
+    for source_name, source_col, source_df, map_source, map_type in sources:
+        distances = source_col.apply(lambda x: levenshtein_distance(value_str, str(x) if x is not None else ""))
+        min_index = distances.argmin()
+        min_distance = distances[min_index]
+        
+        priority_score = 0
+        if source_df is profiles_db:
+            matched_row = source_df.iloc[min_index]
+            if matched_row['status'] != 'screening_only':
+                priority_score += 10
+            if pd.notna(matched_row['cas_rn']):
+                priority_score += 5
+        
+        if (min_distance < best_match['distance_lev'] or 
+            (min_distance == best_match['distance_lev'] and priority_score > best_match['priority_score'])):
+            
+            best_match['distance_lev'] = min_distance
+            best_match['priority_score'] = priority_score
+            best_match['map_source'] = map_source
+            best_match['map_type'] = map_type
+            best_match['matched_on'] = source_col.iloc[min_index]
+            
+            matched_row = source_df.iloc[min_index]
+            if source_df is profiles_db:
+                best_match['map_casrn'] = str(matched_row['cas_rn'])
+                best_match['map_name'] = str(matched_row['name'])
+                best_match['map_inci'] = str(matched_row['inci'])
+                best_match['map_status'] = str(matched_row['status'])
+                best_match['map_hazard'] = str(matched_row['manual_hazard_band_score'])
+                best_match['map_c2c'] = str(matched_row['manual_rollup_score'])
+                best_match['map_scil'] = str(matched_row['scil_status'])
+                best_match['map_tco'] = str(matched_row['tco_status'])
+                best_match['map_additional_casrn'] = ','.join(matched_row['additional_casrns_list'])
+                best_match['map_list_hazard'] = str(matched_row['list_based_hazard_score'])
+                best_match['map_list_c2c'] = str(matched_row['list_based_c2c_score'])
+            else:
+                best_match['map_casrn'] = str(matched_row['casrn'])
+                best_match['map_name'] = str(matched_row['name'])
+                best_match['map_type'] = str(matched_row['type'])
+                best_match['map_inci'] = None
+                best_match['map_status'] = None
+                best_match['map_hazard'] = None
+                best_match['map_c2c'] = None
+                best_match['map_scil'] = None
+                best_match['map_tco'] = None
+                best_match['map_additional_casrn'] = None
+                best_match['map_list_hazard'] = None
+                best_match['map_list_c2c'] = None
+            
+            if min_distance == 0:
+                break
+    
+    return best_match
 
 def process_data(df_inci, ingredients_column, products_column):
     query = """
@@ -86,71 +162,41 @@ def process_data(df_inci, ingredients_column, products_column):
     profiles_db['inci_lower'] = profiles_db['inci'].str.lower()
     cas_mapping['name_lower'] = cas_mapping['name'].str.lower()
     
-    output_data = {}
-    sheet_names = ["first_distance_matches", "second_distance_matches", "third_distance_matches"]
-    for sheet_name in sheet_names:
-        output_data[sheet_name] = df_inci.copy()
-
-    for idx, row in tqdm(df_inci.iterrows(), total=len(df_inci), desc="Processing ingredients"):
+    ingredient_match_cache = {}
+    
+    output_data = df_inci.copy()
+    
+    unique_ingredients = df_inci['ingredients_lower'].unique()
+    
+    for ingredient in tqdm(unique_ingredients, desc="Processing unique ingredients"):
+        if pd.isna(ingredient) or ingredient == '':
+            continue
+            
+        best_match = find_best_match(ingredient, profiles_db, cas_mapping)
+        
+        ingredient_match_cache[ingredient] = best_match
+    
+    for idx, row in tqdm(df_inci.iterrows(), total=len(df_inci), desc="Applying matches to all ingredients"):
         ingredient = row['ingredients_lower']
         
-        sources = [
-            ("profiles_name", profiles_db["name_lower"], profiles_db, "profiles", "name"),
-            ("profiles_inci", profiles_db["inci_lower"], profiles_db, "profiles", "inci"),
-            ("cas_mapping", cas_mapping["name_lower"], cas_mapping, "mapping", "name")
-        ]
-        
-        for source_name, source_col, source_df, map_source, map_type in sources:
-            distances, indexes = find_top3_matches(ingredient, source_col)
+        if pd.isna(ingredient) or ingredient == '' or ingredient not in ingredient_match_cache:
+            continue
             
-            for i, (distance, index) in enumerate(zip(distances, indexes)):
-                sheet_name = sheet_names[i]
-                matched_row = source_df.iloc[index]
-                
-                priority_score = 0
-                if source_df is profiles_db:
-                    if matched_row['status'] != 'screening_only':
-                        priority_score += 10
-                    if pd.notna(matched_row['cas_rn']):
-                        priority_score += 5
-                
-                current_score = output_data[sheet_name].loc[idx, "distance_lev"] if "distance_lev" in output_data[sheet_name].columns else float('inf')
-                current_priority = output_data[sheet_name].loc[idx, "priority_score"] if "priority_score" in output_data[sheet_name].columns else -1
-                
-                if pd.isna(current_score) or distance < current_score or (distance == current_score and priority_score > current_priority):
-                    output_data[sheet_name].loc[idx, "distance_lev"] = distance
-                    output_data[sheet_name].loc[idx, "priority_score"] = priority_score
-                    output_data[sheet_name].loc[idx, 'map_source'] = map_source
-                    output_data[sheet_name].loc[idx, 'map_type'] = map_type
-                    output_data[sheet_name].loc[idx, 'matched_on'] = source_col.iloc[index]
-                    
-                    if source_df is profiles_db:
-                        output_data[sheet_name].loc[idx, 'map_casrn'] = str(matched_row['cas_rn'])
-                        output_data[sheet_name].loc[idx, 'map_name'] = str(matched_row['name'])
-                        output_data[sheet_name].loc[idx, 'map_inci'] = str(matched_row['inci'])
-                        output_data[sheet_name].loc[idx, 'map_status'] = str(matched_row['status'])
-                        output_data[sheet_name].loc[idx, 'map_hazard'] = str(matched_row['manual_hazard_band_score'])
-                        output_data[sheet_name].loc[idx, 'map_c2c'] = str(matched_row['manual_rollup_score'])
-                        output_data[sheet_name].loc[idx, 'map_scil'] = str(matched_row['scil_status'])
-                        output_data[sheet_name].loc[idx, 'map_tco'] = str(matched_row['tco_status'])
-                        output_data[sheet_name].loc[idx, 'map_additional_casrn'] = ','.join(matched_row['additional_casrns_list'])
-                        output_data[sheet_name].loc[idx, 'map_list_hazard'] = str(matched_row['list_based_hazard_score'])
-                        output_data[sheet_name].loc[idx, 'map_list_c2c'] = str(matched_row['list_based_c2c_score'])
-                    else:
-                        output_data[sheet_name].loc[idx, 'map_casrn'] = str(matched_row['casrn'])
-                        output_data[sheet_name].loc[idx, 'map_name'] = str(matched_row['name'])
-                        output_data[sheet_name].loc[idx, 'map_type'] = str(matched_row['type'])
-
+        match = ingredient_match_cache[ingredient]
+        
+        for key, value in match.items():
+            output_data.loc[idx, key] = value
+    
     return output_data
 
 def main():
     current_date = datetime.now().strftime('%Y_%m_%d')
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_file = os.path.join(script_dir, '../../../data/cas_mapping/DataPull_CF-Cleaned_10-10.xlsx')
-    output_directory = os.path.join(script_dir, f'../../../data/cas_mapping/{current_date}_output_10-10')
+    input_file = os.path.join(script_dir, '../../../data/cas_mapping/input.xlsx')
+    output_directory = os.path.join(script_dir, f'../../../data/cas_mapping/{current_date}_output')
     
     os.makedirs(output_directory, exist_ok=True)
-    shutil.copy(input_file, os.path.join(output_directory, f'{current_date}_input_10-10.xlsx'))
+    shutil.copy(input_file, os.path.join(output_directory, f'{current_date}_input.xlsx'))
     
     if input_file.endswith('.xlsx'):
         df = pd.read_excel(input_file)
@@ -172,13 +218,12 @@ def main():
     df_exploded = df_exploded.reset_index(drop=True)
     df_exploded['ingredient_index'] = df_exploded.index + 1
     
-    output_data = process_data(df_exploded, ingredients_column, products_column)
+    output_df = process_data(df_exploded, ingredients_column, products_column)
     
-    for sheet_name, df in output_data.items():
-        output_file = os.path.join(output_directory, f'{current_date}_{sheet_name}.xlsx')
-        df.to_excel(output_file, index=False)
+    output_file = os.path.join(output_directory, f'{current_date}_best_matches.xlsx')
+    output_df.to_excel(output_file, index=False)
     
-    print(f"Processing complete. Check the output files in {output_directory}")
+    print(f"Processing complete. Check the output file at {output_file}")
 
 if __name__ == "__main__":
     main()
