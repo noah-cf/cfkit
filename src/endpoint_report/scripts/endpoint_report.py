@@ -111,25 +111,60 @@ def process_ghs_ratings(ghs_df):
         'ghs_lactation_toxicity',
         'ghs_aspiration'
     ]
+    
+    organs = ['lung', 'liver', 'blood', 'kidney', 'other', 'none']
+    organ_fields = ['rating', 'single_ghs', 'repeated_ghs', 'other_organ']
+    
+    organ_toxicity_columns = []
+    for organ in organs:
+        for field in organ_fields:
+            column_name = f'ghs_organ_toxicity_{organ}_{field}'
+            organ_toxicity_columns.append(column_name)
+    
     ghs_aquatic_subvalues = [
         'algae_ghs',
         'other_ghs',
         'crustacea_ghs',
         'vertebrate_ghs'
     ]
+    
     base_columns = ['profile_id', 'cas_rn', 'inserted_at']
-    all_columns = base_columns + ghs_columns + [f'acute_{col}' for col in ghs_aquatic_subvalues] + [f'chronic_{col}' for col in ghs_aquatic_subvalues]
+    all_columns = base_columns + ghs_columns + organ_toxicity_columns + [f'acute_{col}' for col in ghs_aquatic_subvalues] + [f'chronic_{col}' for col in ghs_aquatic_subvalues]
+    
     profile_ratings = {}
+    
     for index, row in tqdm(ghs_df.iterrows(), total=ghs_df.shape[0], desc="Processing GHS Ratings"):
         profile_id = row['profile_id']
         if profile_id not in profile_ratings:
             profile_ratings[profile_id] = {col: None for col in all_columns}
             profile_ratings[profile_id].update({'profile_id': profile_id, 'cas_rn': row['cas_rn'], 'inserted_at': row['inserted_at']})
+        
         rating_key = row['rating_key']
         sub_values = row['sub_values']
+        
         if rating_key in ghs_columns and 'rating' in sub_values and isinstance(sub_values['rating'], dict):
             rating_value = sub_values['rating'].get('rating')
             profile_ratings[profile_id][rating_key] = rating_value
+        
+        if rating_key == 'ghs_organ_toxicity' and isinstance(sub_values, list):
+            for organ_entry in sub_values:
+                if isinstance(organ_entry, dict):
+                    organ = organ_entry.get('organ')
+                    
+                    organ_key = 'none' if organ is None else organ.lower()
+                    
+                    if organ_key not in organs:
+                        print(f"Warning: Unexpected organ '{organ}' found, skipping...")
+                        continue
+                    
+                    rating_info = organ_entry.get('rating', {})
+                    rating_value = rating_info.get('rating') if isinstance(rating_info, dict) else None
+                    
+                    profile_ratings[profile_id][f'ghs_organ_toxicity_{organ_key}_rating'] = rating_value
+                    profile_ratings[profile_id][f'ghs_organ_toxicity_{organ_key}_single_ghs'] = organ_entry.get('single_ghs')
+                    profile_ratings[profile_id][f'ghs_organ_toxicity_{organ_key}_repeated_ghs'] = organ_entry.get('repeated_ghs')
+                    profile_ratings[profile_id][f'ghs_organ_toxicity_{organ_key}_other_organ'] = organ_entry.get('other_organ')
+        
         if rating_key == 'ghs_acute_aquatic' and isinstance(sub_values, dict):
             for subvalue_key in ghs_aquatic_subvalues:
                 profile_ratings[profile_id][f'acute_{subvalue_key}'] = sub_values.get(subvalue_key)

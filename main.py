@@ -25,7 +25,8 @@ def main():
         'ingredient_intelligence_report': 'src/ingredient_intelligence_report/main.py',
         'small_tasks': 'src/small_tasks/main.py',
         'user_report': 'src/user_report/main.py',
-        'visualization': 'src/visualization/main.py'
+        'visualization': 'src/visualization/main.py',
+        'list_checking': 'src/list_checking/main.py'
     }
 
     print("1. Run CAS Mapping")
@@ -37,6 +38,7 @@ def main():
     print("7. Run Small Tasks")
     print("8. Run User Report")
     print("9. Run Visualization")
+    print("10. Run List Checking")
 
     choice = input("Enter the number of the report to run: ")
 
@@ -58,6 +60,8 @@ def main():
         run_script(options['user_report'])
     elif choice == '9':
         run_script(options['visualization'])
+    elif choice == '10':
+        run_script(options['list_checking'])
     else:
         print("Invalid choice. Please try again.")
 

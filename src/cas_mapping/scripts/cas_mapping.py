@@ -132,7 +132,68 @@ def find_best_match(value, profiles_db, cas_mapping):
     
     return best_match
 
-def process_data(df_inci, ingredients_column, products_column):
+def prompt_for_user_decision(ingredient, best_match, profiles_db, cas_mapping):
+    """
+    Prompt user for decision when no exact match is found.
+    Returns updated match dictionary.
+    """
+    print(f"\nIngredient: '{ingredient}'")
+    print(f"Best match found: '{best_match['matched_on']}' with distance: {best_match['distance_lev']}")
+    print(f"Match source: {best_match['map_source']} ({best_match['map_type']})")
+    print(f"CAS number: {best_match['map_casrn']}")
+    
+    while True:
+        decision = input("Enter 'y' to accept, 'n' to reject, or 'r' to replace with correct CAS: ").lower()
+        
+        if decision == 'y':
+            best_match['distance_lev'] = '0-UY'
+            break
+        elif decision == 'n':
+            best_match['distance_lev'] = f"{best_match['distance_lev']}-UN"
+            break
+        elif decision == 'r':
+            cas_number = input("Enter the correct CAS number: ").strip()
+            
+            cas_match = profiles_db[profiles_db['cas_rn'] == cas_number]
+            
+            if not cas_match.empty:
+                matched_row = cas_match.iloc[0]
+                best_match['distance_lev'] = '0-UR'
+                best_match['map_casrn'] = str(matched_row['cas_rn'])
+                best_match['map_name'] = str(matched_row['name'])
+                best_match['map_inci'] = str(matched_row['inci'])
+                best_match['map_status'] = str(matched_row['status'])
+                best_match['map_hazard'] = str(matched_row['manual_hazard_band_score'])
+                best_match['map_c2c'] = str(matched_row['manual_rollup_score'])
+                best_match['map_scil'] = str(matched_row['scil_status'])
+                best_match['map_tco'] = str(matched_row['tco_status'])
+                best_match['map_additional_casrn'] = ','.join(matched_row['additional_casrns_list'])
+                best_match['map_list_hazard'] = str(matched_row['list_based_hazard_score'])
+                best_match['map_list_c2c'] = str(matched_row['list_based_c2c_score'])
+                print(f"Replaced with CAS {cas_number}")
+                break
+            else:
+                print(f"CAS number {cas_number} not found in database. Please try again.")
+        else:
+            print("Invalid input. Please enter 'y', 'n', or 'r'.")
+    
+    return best_match
+
+def get_mapping_mode():
+    """Get the mapping mode from user."""
+    print("\nSelect mapping mode:")
+    print("1: In-process mapping (interactive during processing)")
+    print("2: End-of-process mapping (batch interactive at end)")
+    print("3: Final report only (current behavior)")
+    
+    while True:
+        choice = input("Enter your choice (1, 2, or 3): ")
+        if choice in ['1', '2', '3']:
+            return int(choice)
+        print("Invalid choice. Please enter 1, 2, or 3.")
+
+def process_data(df_inci, ingredients_column, products_column, mapping_mode=3):
+    """Modified process_data function with mapping mode support."""
     query = """
     SELECT 
         id,
@@ -157,12 +218,12 @@ def process_data(df_inci, ingredients_column, products_column):
     cas_mapping = pd.read_excel(cas_mapping_path, sheet_name="mappings", engine='openpyxl', dtype=str)
     
     profiles_db['additional_casrns_list'] = profiles_db['additional_casrns'].apply(extract_additional_casrns)
-    
     profiles_db['name_lower'] = profiles_db['name'].str.lower()
     profiles_db['inci_lower'] = profiles_db['inci'].str.lower()
     cas_mapping['name_lower'] = cas_mapping['name'].str.lower()
     
     ingredient_match_cache = {}
+    pending_decisions = []
     
     output_data = df_inci.copy()
     
@@ -171,17 +232,37 @@ def process_data(df_inci, ingredients_column, products_column):
     for ingredient in tqdm(unique_ingredients, desc="Processing unique ingredients"):
         if pd.isna(ingredient) or ingredient == '':
             continue
-            
+        
         best_match = find_best_match(ingredient, profiles_db, cas_mapping)
+    
+        if mapping_mode in [1, 2] and best_match['distance_lev'] > 0:
+            if mapping_mode == 1:
+                best_match = prompt_for_user_decision(ingredient, best_match, profiles_db, cas_mapping)
+            else:
+                pending_decisions.append({
+                    'ingredient': ingredient,
+                    'best_match': best_match.copy()
+                })
         
         ingredient_match_cache[ingredient] = best_match
+    
+    if mapping_mode == 2 and pending_decisions:
+        print(f"\n{len(pending_decisions)} ingredients need review:")
+        for item in pending_decisions:
+            updated_match = prompt_for_user_decision(
+                item['ingredient'], 
+                item['best_match'], 
+                profiles_db, 
+                cas_mapping
+            )
+            ingredient_match_cache[item['ingredient']] = updated_match
     
     for idx, row in tqdm(df_inci.iterrows(), total=len(df_inci), desc="Applying matches to all ingredients"):
         ingredient = row['ingredients_lower']
         
         if pd.isna(ingredient) or ingredient == '' or ingredient not in ingredient_match_cache:
             continue
-            
+        
         match = ingredient_match_cache[ingredient]
         
         for key, value in match.items():
@@ -208,6 +289,8 @@ def main():
     ingredients_column = get_column_name(df, "Ingredients Column", "Enter the column name containing ingredients:")
     products_column = get_column_name(df, "Products Column", "Enter the column name containing product names:")
     
+    mapping_mode = get_mapping_mode()
+    
     df['full_ingredients_list'] = df[ingredients_column]
     df['ingredients_lower'] = df[ingredients_column].apply(clean_ingredients)
     df['ingredients_lower'] = df['ingredients_lower'].str.split(r',\s+')
@@ -218,9 +301,10 @@ def main():
     df_exploded = df_exploded.reset_index(drop=True)
     df_exploded['ingredient_index'] = df_exploded.index + 1
     
-    output_df = process_data(df_exploded, ingredients_column, products_column)
+    output_df = process_data(df_exploded, ingredients_column, products_column, mapping_mode)
     
-    output_file = os.path.join(output_directory, f'{current_date}_best_matches.xlsx')
+    mode_suffix = ['', '_in_process', '_end_process', ''][mapping_mode - 1]
+    output_file = os.path.join(output_directory, f'{current_date}_best_matches{mode_suffix}.xlsx')
     output_df.to_excel(output_file, index=False)
     
     print(f"Processing complete. Check the output file at {output_file}")
